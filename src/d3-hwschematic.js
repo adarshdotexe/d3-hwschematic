@@ -68,11 +68,12 @@ export default class HwSchematic {
         // main svg element
         this.svg = svg;
         // default sizes of elements
-        this.PORT_PIN_SIZE = [7, 13];
-        this.PORT_HEIGHT = this.PORT_PIN_SIZE[1];
-        this.CHAR_WIDTH = 7.55;
-        this.CHAR_HEIGHT = 13;
-        this.NODE_MIDDLE_PORT_SPACING = 20;
+        this.PORT_PIN_SIZE = [7.55, 13];
+        this.PORT_HEIGHT = this.PORT_PIN_SIZE[1] + 1;
+        this.PORT_WIDTH = this.PORT_PIN_SIZE[0];
+        this.CHAR_HEIGHT = this.PORT_PIN_SIZE[1];
+        this.CHAR_WIDTH = this.PORT_PIN_SIZE[0];
+        this.NODE_MIDDLE_PORT_SPACING = 50;
         this.MAX_NODE_BODY_TEXT_SIZE = [400, 400];
         // top, right, bottom, left
         this.BODY_TEXT_PADDING = [15, 10, 0, 10];
@@ -88,6 +89,7 @@ export default class HwSchematic {
         this.layouter
             .options({
                 edgeRouting: "ORTHOGONAL",
+
             })
             .transformGroup(this.root);
 
@@ -98,9 +100,6 @@ export default class HwSchematic {
         this.nodeRenderers = new NodeRendererContainer();
         addMarkers(this.defs, this.PORT_PIN_SIZE);
         let rs = this.nodeRenderers;
-        rs.registerRenderer(new OperatorNodeRenderer(this));
-        rs.registerRenderer(new MuxNodeRenderer(this));
-        rs.registerRenderer(new SliceNodeRenderer(this));
         rs.registerRenderer(new GenericNodeRenderer(this));
     }
 
@@ -131,10 +130,10 @@ export default class HwSchematic {
      */
     bindData(graph) {
         this.removeGraph();
-        let postCompaction = "layered.compaction.postCompaction.strategy";
-        if (!graph.properties[postCompaction]) {
-            graph.properties[postCompaction] = "EDGE_LENGTH";
-        }
+        // let postCompaction = "layered.compaction.postCompaction.strategy";
+        // if (!graph.properties[postCompaction]) {
+        //     graph.properties[postCompaction] = "NONE";
+        // }
         hyperEdgesToEdges(graph, graph.hwMeta.maxId);
         initNodeParents(graph, null);
         expandPorts(graph);
@@ -165,7 +164,7 @@ export default class HwSchematic {
         this.updateGlobalSize();
 
         let layouter = this.layouter;
-        this._nodes = layouter.getNodes().slice(1); // skip root node
+        this._nodes = layouter.getNodes().slice(1) // skip root node
         this._edges = layouter.getEdges();
         let t0;
         if (this._PERF) {
