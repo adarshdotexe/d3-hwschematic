@@ -19,6 +19,21 @@ export default class d3elk {
 		// the layouter instance
 		this.layouter = new ELK({
 			algorithms: ['layered'],
+			defaultLayoutOptions: {
+				'elk.padding': '[left=50, top=50, right=50, bottom=100]',
+				'elk.spacing.nodeNode': '75.0',
+				'layered.spacing.baseValue' : 200.0,
+				'elk.layered.spacing.nodeNodeBetweenLayers': 100.0,
+				'algorithm': 'layered',
+				'elk.port.side': 'WEST',
+				'elk.layered.layering.strategy': 'INTERACTIVE',
+				'elk.direction': 'DOWN',
+				'elk.aspectRatio': '2',
+				'org.eclipse.elk.layered.nodePlacement.favorStraightEdges': 'true',
+				'elk.layered.nodePlacement.strategy': 'SIMPLE',
+			  },
+			workerUrl: '/elk-worker.min.js',
+			
 		});
 		this._invalidateCaches();
 	}
