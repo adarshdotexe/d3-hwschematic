@@ -15,11 +15,9 @@ var PORT_MARKERS = {
 
 export function addMarkers(defs, PORT_PIN_SIZE) {
     // real size of marker
-    var w = 7;
-    var h = 10;
-    
+    var size = 12;
     function addMarker(id, arrowTranslate, arrowRotate=0) {
-    	var rightArrow = "M 0 4  2 4  2 0  7 5  2 10  2 6  0 6 Z";
+    	var rightArrow = "M 7 0 L 12 6 L 7 12 Z";
         var trans = "";
     
         if (arrowTranslate[0] !== 0 || arrowTranslate[1] !== 0)
@@ -41,25 +39,30 @@ export function addMarkers(defs, PORT_PIN_SIZE) {
             .attr("transform", trans);
     }
     
-    var horizYOffset = (PORT_PIN_SIZE[1] - h) * 0.5;
-    var horizYOffset2 = (PORT_PIN_SIZE[1] + h) * 0.5;
+    var horizYOffset = (PORT_PIN_SIZE[1] - size) * 0.5;
+    var horizYOffset2 = (PORT_PIN_SIZE[1] + size) * 0.5;
     
-    var vertXOffset = -(PORT_PIN_SIZE[1] - w) * 0.5;
-    addMarker("westInPortMarker", [0, horizYOffset]);
-    addMarker("westOutPortMarker",[w, horizYOffset2], 180);
+    var vertXOffset = -size * 0.5;
+    addMarker("westInPortMarker", [vertXOffset, horizYOffset]);
+    addMarker("westOutPortMarker",[ 1 - (2 * vertXOffset), horizYOffset2], 180);
     
-    addMarker("eastInPortMarker", [w, horizYOffset2], 180);
-    addMarker("eastOutPortMarker",[0, horizYOffset]);
+    addMarker("eastInPortMarker", [ 1 - (2 * vertXOffset), horizYOffset2], 180);
+    addMarker("eastOutPortMarker",[vertXOffset, horizYOffset]);
     
-    addMarker("northInPortMarker", [vertXOffset, -w], 90);
-    addMarker("northOutPortMarker",[vertXOffset, 0], 270);
+    addMarker("northInPortMarker", [0, 0], 90);
+    addMarker("northOutPortMarker",[0, 0], 270);
     
-    addMarker("southInPortMarker", [vertXOffset, w], 270);
-    addMarker("southOutPortMarker",[vertXOffset, 0], 90);
+    addMarker("southInPortMarker", [0, 0], 270);
+    addMarker("southOutPortMarker",[0, 0], 90);
 }
 
 export function getIOMarker(d) {
-    var side = d.properties.side;
+    // var side = d.side;
+    if (d.x < 0 ) {
+        var side = "WEST"
+    } else {
+        var side = "EAST"
+    }
     var portType = d.direction;
     var marker = PORT_MARKERS[side][portType];
     if (marker === undefined) {
