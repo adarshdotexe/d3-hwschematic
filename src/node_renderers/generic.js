@@ -66,7 +66,7 @@ export class GenericNodeRenderer {
 		var CHAR_WIDTH = schematic.CHAR_WIDTH;
 		if (d.ports != null)
 			d.ports.forEach(function(p) {
-				var t = p.properties.side;
+				var t = p.side;
 				var indent = 0;
 				if (portLevel(p) > 0)
 					indent = (portLevel(p)+1) * CHAR_WIDTH;
@@ -100,11 +100,12 @@ export class GenericNodeRenderer {
 
 		d.portLabelWidth = portW;
 		d.width = max(portW * portColums + middleSpacing, labelW,
-			max(south[0], north[0]) * schematic.PORT_HEIGHT)
+			(south[0] + north[0]) * schematic.PORT_HEIGHT)
 			+ bodyTextSize[0] + CHAR_WIDTH;
-		d.height = max(max(west[0], east[0]) * schematic.PORT_HEIGHT,
+		d.height = max((west[0] + east[0]) * schematic.PORT_HEIGHT,
 			bodyTextSize[1],
 			max(south[1], north[1]) * CHAR_WIDTH);
+
 	}
 
     /**
@@ -216,8 +217,8 @@ export class GenericNodeRenderer {
 		nodeBody
 			.attr("width", function(d) { return d.width })
 			.attr("height", function(d) { return d.height })
-			.attr("rx", 5) // rounded corners
-			.attr("ry", 5);
+			// .attr("rx", 5) // rounded corners
+			// .attr("ry", 5);
 
 		// apply node positions
 		node
@@ -229,7 +230,7 @@ export class GenericNodeRenderer {
 			});
 
 		// spot node label
-		node.append("text")
+		var nodeLablel = node.append("text")
 			.text(function(d) {
 				if (d.hwMeta && !d.hwMeta.isExternalPort) {
 					return d.hwMeta.name;
@@ -237,7 +238,7 @@ export class GenericNodeRenderer {
 					return "";
 				}
 			});
-
+		nodeLablel.attr("transform", "translate(0,-" + this.schematic.CHAR_HEIGHT * 0.25 + ")")
 		// spot node body text
 		node.append("text")
 			.call(this.renderTextLines.bind(this));
@@ -246,8 +247,10 @@ export class GenericNodeRenderer {
 	}
 
 	renderPorts(node) {
+
 		var schematic = this.schematic;
 		var PORT_HEIGHT = schematic.PORT_HEIGHT;
+		var PORT_WIDTH = schematic.PORT_WIDTH;
 		var CHAR_WIDTH = schematic.CHAR_WIDTH;
 		var portG = node.selectAll(".port")
 			.data(function(d) {
@@ -263,11 +266,8 @@ export class GenericNodeRenderer {
 					return "port";
 				}
 			});
-
-		// apply port positions
-		portG
-			.attr("transform", function(d) {
-				return "translate(" + d.x + "," + d.y + ")"
+			portG.attr("transform", function(d) {
+				return "translate(" + d.x  + "," + d.y + ")";
 			});
 
 		node.each(function(d) {
@@ -292,27 +292,39 @@ export class GenericNodeRenderer {
 					return "";
 				else if (d.parent) {
 					var indent = '-'.repeat(portLevel(d));
-					var side = d.properties.side;
+					// var side = d.side;
+					if (d.x < 0) {
+						var side = "WEST"
+					} else {
+						var side = "EAST"
+					}
 					if (side == "WEST") {
-						return indent + d.hwMeta.name;;
+						return indent + d.hwMeta.name;
 					} else if (side == "EAST") {
 						return d.hwMeta.name + indent;
 					} else {
 						throw new Error(side);
 					}
-				} else
+				} else 
 					return d.hwMeta.name;
 			})
 			.attr("x", function(d) {
-				var side = d.properties.side;
+				// var side = d.side;
+				if (d.x < 0) {
+					var side = "WEST"
+				} else {
+					var side = "EAST"
+				}
 				if (side == "WEST") {
-					return 7;
+					// Print d.x and d.hwMeta.parent.x to debug
+					console.log(d.x + (this.textContent.length * CHAR_WIDTH) + PORT_WIDTH, d.hwMeta.parent.x);
+					return PORT_WIDTH * 2;
 				} else if (side == "EAST") {
-					if (typeof this.getBBox == "undefined") {
+					// if (typeof this.getBBox == "undefined") {
 						// JSDOM under nodejs
-						return -this.textContent.length * CHAR_WIDTH - CHAR_WIDTH / 2
-					}
-					return -this.getBBox().width - CHAR_WIDTH / 2;
+						return -(this.textContent.length * CHAR_WIDTH) - PORT_WIDTH 
+					// }
+					// return -this.getBBox().width  - PORT_WIDTH;
 				} else if (side == "NORTH") {
 					return 0;
 				} else if (side == "SOUTH") {
