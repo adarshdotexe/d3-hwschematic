@@ -66,7 +66,7 @@ export class GenericNodeRenderer {
 		var CHAR_WIDTH = schematic.CHAR_WIDTH;
 		if (d.ports != null)
 			d.ports.forEach(function(p) {
-				var t = p.side;
+				var t = p.properties.side;
 				var indent = 0;
 				if (portLevel(p) > 0)
 					indent = (portLevel(p)+1) * CHAR_WIDTH;

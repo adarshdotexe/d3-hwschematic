@@ -46,7 +46,8 @@
   },
   "dependencies": {
     "d3": "^7.9.0",
-    "elkjs": "^0.8.2"
+    "elkjs": "^0.8.2",
+    "uniqolor": "^1.1.1"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.24.6",

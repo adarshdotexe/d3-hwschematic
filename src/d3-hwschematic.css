@@ -53,7 +53,7 @@
 }
 
 .d3-hwschematic .link {
-	stroke: #000;
+	/* stroke: #000; */
 	fill: none;
 }
 

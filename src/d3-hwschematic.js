@@ -1,9 +1,6 @@
 import * as d3 from "d3";
 import {addMarkers} from "./markers";
 import {NodeRendererContainer} from "./nodeRendererContainer";
-import {OperatorNodeRenderer} from "./node_renderers/operatorNode";
-import {MuxNodeRenderer} from "./node_renderers/muxNode";
-import {SliceNodeRenderer} from "./node_renderers/sliceNode";
 import {GenericNodeRenderer} from "./node_renderers/generic";
 import {renderLinks} from "./linkRenderer";
 import {Tooltip} from "./tooltip";
