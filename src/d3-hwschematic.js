@@ -4,7 +4,7 @@ import {NodeRendererContainer} from "./nodeRendererContainer";
 import {GenericNodeRenderer} from "./node_renderers/generic";
 import {renderLinks} from "./linkRenderer";
 import {Tooltip} from "./tooltip";
-import {yosys} from "./yosys.js";
+
 import {
     hyperEdgesToEdges,
     getNet, initNodeParents, expandPorts
@@ -28,27 +28,126 @@ function getNameOfEdge(e) {
     return name;
 }
 
+function getDetailsOfNode(n) {
+    let details = "";
+    if (n.hwMeta) {
+        if (typeof n.hwMeta.name !== "undefined") {
+            details += "Name: " + n.hwMeta.name + "&#13;&#10;";
+        }
+        if (typeof n.hwMeta.cls !== "undefined") {
+            details += "Class: " + n.hwMeta.cls + "&#13;&#10;";
+        }
+    }
+    if (details === "") {
+        details = "unnamed";
+    }
+    return details;
+}
+
+function getDetailsOfPort(p) {
+    let details = "";
+    if (p.hwMeta) {
+        if (typeof p.hwMeta.fullname !== "undefined") {
+            details += "Name: " + p.hwMeta.fullname + "&#13;&#10;";
+        }
+        if (typeof p.hwMeta.cls !== "undefined") {
+            details += "Class: " + p.hwMeta.cls + "&#13;&#10;";
+        }
+        if (typeof p.hwMeta.sig_name !== "undefined") {
+            details += "Signal: " + p.hwMeta.sig_name + "&#13;&#10;";
+        }
+    }
+    if (details === "") {
+        details = "unnamed";
+    }
+    return details;
+}
+
+
+function toggleChild(child) {
+    let parent = child.hwMeta.parent;
+
+    // Initialize children, _children, edges and _edges arrays if undefined
+    parent.children = parent.children || [];
+    parent._children = parent._children || []; 
+    parent.edges = parent.edges || [];
+    parent._edges = parent._edges || [];
+
+    let visible = parent.children.includes(child);
+    
+    if (visible) {
+        // Hide the child
+        parent.children = parent.children.filter(c => c !== child);
+        parent._children.push(child);
+        
+        // Move edges connected to the child from visible to hidden
+        parent.edges = parent.edges.filter(e => {
+            if (e.source === child.id || e.target === child.id) {
+                parent._edges.push(e);
+                return false;
+            }
+            return true;
+        });
+        
+
+
+        parent.hwMeta.renderer.prepare(parent);
+        return parent;
+    }
+    else {
+        // Show the child 
+        parent._children = parent._children.filter(c => c !== child);
+        parent.children.push(child);
+        
+        // Move edges connected to the child from hidden to visible
+        parent._edges = parent._edges.filter(e => {
+            if ((e.source === child.id &&
+                (parent.children.some(c => c.id === e.target) || parent.id ===e.target)) ||
+                (e.target === child.id &&
+                (parent.children.some(c => c.id === e.source) || parent.id ===e.source))) {
+                parent.edges.push(e);
+                return false;
+            }
+            return true;
+        });
+        
+
+
+        parent.hwMeta.renderer.prepare(parent);
+        return child;
+    }
+}
+
 function toggleHideChildren(node) {
-    let children;
     let nextFocusTarget;
-    if (node.children) {
+    if (node.children && node.children.length > 0) {
         // children are visible, will collapse
-        children = node.children;
+        // put children to _children
+        while (node.children.length > 0) {
+            let child = node.children.pop();
+            node._children.push(child);
+        }
+        // put edges to _edges
+        while (node.edges.length > 0) {
+            let edge = node.edges.pop();
+            node._edges.push(edge);
+        }
         nextFocusTarget = node.hwMeta.parent;
-    } else {
+    } else if (node._children && node._children.length > 0) {
+        while (node._children.length > 0) {
+            let child = node._children.pop();
+            node.children.push(child);
+        }
+        while (node._edges.length > 0) {
+            let edge = node._edges.pop();
+            node.edges.push(edge);
+        }
         // children are hidden, will expand
         children = node._children;
         nextFocusTarget = node;
     }
-
-    let tmpChildren = node.children;
-    node.children = node._children;
-    node._children = tmpChildren;
-    let tmpEdges = node.edges;
-    node.edges = node._edges;
-    node._edges = tmpEdges;
     node.hwMeta.renderer.prepare(node);
-    return [children, nextFocusTarget];
+    return nextFocusTarget;
 }
 
 /**
@@ -202,24 +301,132 @@ export default class HwSchematic {
         this.nodeRenderers.render(root, node);
 
         let _this = this;
-        node.on("click", function (ev, d) {
-            let [children, nextFocusTarget] = toggleHideChildren(d);
-            if (!children || children.length === 0) {
-                return; // does not have anything to expand
-            }
-            _this.layouter.markLayoutDirty();
-            _this.removeGraph();
-            _this._draw().then(
-                function () {
-                    _this.layouter.zoomToFit(nextFocusTarget);
-                },
-                function (e) {
-                    // Error while applying of layout
-                    throw e;
-                }
-            );
-        });
 
+        root.selectAll(".port").on("mouseover", function (ev, d) {
+            _this.tooltip.show(ev, getDetailsOfPort(d));
+        } );
+        root.selectAll(".port").on("mouseout", function (ev, d) {
+            _this.tooltip.hide();
+        } );
+
+        root.selectAll("rect").on("mouseover", function (ev, d) {
+            _this.tooltip.show(ev, getDetailsOfNode(d));
+        } );
+        root.selectAll("rect").on("mouseout", function (ev, d) {
+            _this.tooltip.hide();
+        } );
+
+        // On right click list all visible children as selected and all hidden as unselected in a context menu, upon selection make the selected child visible and zoom to it
+        node.on("contextmenu", function (ev, d) {
+            ev.preventDefault();
+            let selected = d.children || [];
+            let unselected = d._children || [];
+            let menu = d3.select("body").append("div")
+                .attr("class", "context-menu")
+                .style("left", ev.pageX + "px")
+                .style("top", ev.pageY + "px")
+            if (selected.length === 0) {
+                menu.append("div")
+                    .attr("class", "context-menu-item disabled")
+                    .text("No children to hide");
+                    
+            }
+            else {
+                menu.append("div")
+                    .attr("class", "context-menu-item")
+                    .style("font-weight", "bold")
+                    .style("font-size", "16px")
+                    .style("color", "black")
+                    .text("Hide All")
+                    .on("click", function () {
+                        selected.forEach(function (c) {
+                            toggleChild(c);
+                        });
+                        _this.removeGraph();
+                        _this._draw().then(
+                            function () {
+                                _this.layouter.zoomToFit(d);
+                            },
+                            function (e) {
+                                // Error while applying of layout
+                                throw e;
+                            }
+                        );
+                        menu.remove();
+                    });
+                selected.forEach(function (c) {
+                    menu.append("div")
+                        .text(c.hwMeta.name)
+                        .attr("class", "context-menu-item")
+                        .on("click", function () {
+                            let nextFocusTarget = toggleChild(c);
+                            _this.removeGraph();
+                            _this._draw().then(
+                                function () {
+                                    _this.layouter.zoomToFit(nextFocusTarget);
+                                },
+                                function (e) {
+                                    // Error while applying of layout
+                                    throw e;
+                                }
+                            );
+                            menu.remove();
+                        });
+                }
+                );
+            }
+            if (unselected.length === 0) {
+                menu.append("div")
+                    .attr("class", "context-menu-item disabled")
+                    .text("No children to show");
+            }
+            else {
+            menu.append("div")
+                .attr("class", "context-menu-item")
+                .style("font-weight", "bold")
+                .style("font-size", "16px")
+                .style("color", "black")
+                .text("Show All")
+                .on("click", function () {
+                    unselected.forEach(function (c) {
+                        toggleChild(c);
+                    });
+                    _this.removeGraph();
+                    _this._draw().then(
+                        function () {
+                            _this.layouter.zoomToFit(d);
+                        },
+                        function (e) {
+                            // Error while applying of layout
+                            throw e;
+                        }
+                    );
+                    menu.remove();
+                });
+            unselected.forEach(function (c) {
+                menu.append("div")
+                    .text(c.hwMeta.name)
+                    .attr("class", "context-menu-item")
+                    .on("click", function () {
+                        let nextFocusTarget = toggleChild(c);
+                        _this.removeGraph();
+                        _this._draw().then(
+                            function () {
+                                _this.layouter.zoomToFit(nextFocusTarget);
+                            },
+                            function (e) {
+                                // Error while applying of layout
+                                throw e;
+                            }
+                        );
+                        menu.remove();
+                    });
+            });
+            }
+            menu.on("mouseleave", function () {
+                menu.remove();
+            });
+        });
         this._applyLayoutLinks();
     }
 
@@ -271,7 +478,7 @@ export default class HwSchematic {
             let doSelect = net.selected = !net.selected;
             // propagate click on all nets with same source
 
-            let netCore = netToLink[net.id]["core"];
+            let netCore = netToLink[net.id]["wrap"];
             d3.selectAll(netCore)
                 .classed("link-selected", doSelect);
             ev.stopPropagation();
@@ -280,10 +487,6 @@ export default class HwSchematic {
         // Select net on click
         link.on("click", onLinkClick);
         linkWrap.on("click", onLinkClick);
-    }
-
-    static fromYosys(yosysJson) {
-        return yosys(yosysJson);
     }
 
     terminate() {

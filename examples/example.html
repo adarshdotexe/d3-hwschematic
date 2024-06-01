@@ -7,30 +7,49 @@
     <script type="text/javascript" src="../node_modules/d3/dist/d3.js"></script>
     <script type="text/javascript" src="../node_modules/elkjs/lib/elk.bundled.js"></script>
     <script type="text/javascript" src="../dist/d3-hwschematic.js"></script>
+    <script type="module" crossorigin src="../node_modules/@marko19907/string-to-color/dist/index.js"></script>
     <link href="../dist/d3-hwschematic.css" rel="stylesheet">
-    <style>
-        body {
-            margin: 0;
-        }
-    </style>
 </head>
 
 <body>
-<label>
-    Open schematic:
-    <input type="file" id="file-input"/>
-</label>
+    <div style="display: flex; flex-direction: row; height: 100vh;">
+        <div class="sidebar">
+            <label> Open schematic:
+                <input type="file" id="file-input" />
+            </label>
+            <label> Root path: 
+                <input type="text" id="root-path-input" list="root-path-input-paths" />
+                <datalist id="root-path-input-paths"></datalist>
+            </label>
+            <label> Search Node: (TODO: implement search)
+                <input type="text" id="search-node-input" />
+                <input type="checkbox" id="search-node-case-sensitive" />
+                <label for="search-node-case-sensitive">Case sensitive</label>
+                <input type="checkbox" id="search-node-regex" />
+                <label for="search-node-regex">Regex</label>
+                <div id="current-nodes-info" class="tree-nodes-info">
+                    <p>Current nodes:</p>
+                    <button onclick="getCurrentNodesInfo(graph)">Refresh</button>
+                    <ul id="current-nodes-list"></ul>
+                </div>
+            </label>
+            <label> Search Edge: (TODO: implement search)
+                <p>Source:</p>
+                <input type="text" id="search-edge-input-source" />
+                <p>Target:</p>
+                <input type="text" id="search-edge-input-target" />
+            </label>
 
-<label>
-    Root path:
-    <input type="text" id="root-path-input" list="root-path-input-paths"/>
-    <datalist id="root-path-input-paths"></datalist>
+        </div>
+        <div style="flex: 1; padding: 1em;">
+            <svg id="scheme-placeholder"></svg>
+        </div>
+    </div>
+</body>
 
-    <input type="submit" value="Submit" id="root-path-input-submit" onclick="onSchematicRootSubmit();">
-</label>
-
-<svg id="scheme-placeholder"></svg>
 <script>
+    const margin = parseFloat(getComputedStyle(document.documentElement).fontSize);
+
     // schematic rendering script
     function viewport() {
         let e = window,
@@ -39,9 +58,12 @@
             a = 'client';
             e = document.documentElement || document.body;
         }
+        
+        const sidebarHeight = document.querySelector('.sidebar').offsetHeight;
+        
         return {
-            width: e[a + 'Width'],
-            height: e[a + 'Height']
+            width: e[a + 'Width'] - 2 * margin,
+            height: e[a + 'Height'] - 2 * margin - sidebarHeight
         }
     }
 
@@ -52,11 +74,7 @@
         .attr("width", width)
         .attr("height", height);
 
-    let orig = document.body.onresize;
     document.body.onresize = function (ev) {
-        if (orig)
-            orig(ev);
-
         let w = viewport();
         svg.attr("width", w.width);
         svg.attr("height", w.height);
@@ -73,10 +91,31 @@
     // because it interferes with component expanding/collapsing
     svg.call(zoom)
         .on("dblclick.zoom", null)
-
+    
 </script>
 <script>
     // data loading script
+
+    function getCurrentNodesInfo(graph) {
+        let currentNodesInfo = document.getElementById("current-nodes-info");
+        let currentNodesList = document.getElementById("current-nodes-list");
+        currentNodesList.innerHTML = "";
+        let nodes = rootGraph.children[0]
+        AddNodesToList(nodes, currentNodesList);
+    }
+
+    function AddNodesToList(node, list) {
+        let li = document.createElement("li");
+        li.appendChild(document.createTextNode(node.hwMeta.name));
+        list.appendChild(li);
+        if (node.children) {
+            let ul = document.createElement("ul");
+            li.appendChild(ul);
+            for (let child of node.children) {
+                AddNodesToList(child, ul);
+            }
+        }
+    }
 
     // file open handler
     function readSingleFile(e) {
@@ -105,7 +144,9 @@
                     throw e;
                 }
                 displayContents(graph);
-
+                let allPaths = []
+                getAllPaths(rootGraph.children[0], "/", allPaths);
+                setRootInputPathsOptions(allPaths, rootInputPaths);
             };
             reader.readAsText(file);
         } catch (e) {
@@ -123,17 +164,7 @@
             hwSchematic.setErrorText(e);
             throw e;
         });
-
-        // remove old options in rootInputPaths
-        let child = rootInputPaths.lastElementChild;
-        while (child) {
-            rootInputPaths.removeChild(child);
-            child = rootInputPaths.lastElementChild;
-        }
-
-        let allPaths = []
-        getAllPaths(rootGraph.children[0], "/", allPaths);
-        setRootInputPathsOptions(allPaths, rootInputPaths);
+        getCurrentNodesInfo(graph)
     }
 
     function onSchematicRootSubmit() {
@@ -167,7 +198,7 @@
     function setRootInputPathsOptions(optionArray, htmlDatasetList) {
         optionArray.forEach(item => {
             let option = document.createElement('option');
-            option.value = item;
+            option.value = item + '\u200C';
             htmlDatasetList.appendChild(option);
         });
     }
@@ -192,6 +223,15 @@
         }
     }
 
+    rootInput.addEventListener("change", function () {
+        if (rootInput.value.endsWith('\u200C')) {
+            // Remove the invisible character from the input value
+            rootInput.value = rootInput.value.slice(0, -1);
+            onSchematicRootSubmit();
+            rootInput.value = ""
+        }
+    });
+
     function setUrlParameterByName(name, value, url) {
         if (!url) url = window.location.href;
         url = new URL(url);
@@ -215,6 +255,9 @@
                         graph = d3.HwSchematic.selectGraphRootByPath(graph, schematicRoot);
                     }
                     displayContents(graph);
+                    let allPaths = []
+                    getAllPaths(rootGraph.children[0], "/", allPaths);
+                    setRootInputPathsOptions(allPaths, rootInputPaths);
                 } catch (e) {
                     hwSchematic.setErrorText(e);
                     throw e;
@@ -225,6 +268,5 @@
             });
     }
 </script>
-</body>
 
 </html>

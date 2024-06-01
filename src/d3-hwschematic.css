@@ -53,12 +53,8 @@
 }
 
 .d3-hwschematic .link {
-	/* stroke: #000; */
-	fill: none;
-}
-
-.d3-hwschematic .link-selected {
-	stroke: orange;
+	stroke: #000;
+	stroke-width: 3;
 	fill: none;
 }
 
@@ -68,6 +64,12 @@
     stroke: transparent;
     stroke-opacity: .6;
 }
+
+.d3-hwschematic .link-selected {
+	stroke: orange;
+	fill: none;
+}
+
 .d3-hwschematic .link-wrap.link-wrap-activated {
 	stroke: deepskyblue;
 }
@@ -88,4 +90,68 @@
 	border-radius: 5px;
 	padding: 5px;
 	position: fixed;
+	white-space: pre-wrap;
+}
+
+.tooltip-inner {
+    white-space: pre-wrap;
+}
+
+.context-menu {
+    position: absolute;
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    padding: 5px;
+    z-index: 10;
+    display: block;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.context-menu-item {
+    padding: 5px;
+    cursor: pointer;
+    background-color: #f9f9f9;
+    transition: background-color 0.3s ease;
+}
+
+.context-menu-item:hover {
+    background-color: #e0e0e0;
+}
+
+.context-menu-item.disabled {
+    color: #ccc;
+    cursor: not-allowed;
+}
+
+body {
+	display: flex;
+	margin: 0;
+	font-family: Arial, sans-serif;
+}
+
+.sidebar {
+	width: 15em;
+	background-color: #f4f4f4;
+	padding: 2em;
+	box-shadow: 1em 0 1.5em rgba(0,0,0,0.1);
+	flex: 0 0 auto;
+}
+
+label {
+	display: block;
+	margin-bottom: 1em;
+}
+
+input {
+	width: 100%;
+	padding: 0.5em;
+	margin-top: 0.5em;
+}
+
+button {
+	width: 100%;
+	padding: 0.5em;
+	margin-top: 0.5em;
 }

@@ -45,6 +45,7 @@
     "node": ">=12.22.9"
   },
   "dependencies": {
+    "@marko19907/string-to-color": "^1.0.0",
     "d3": "^7.9.0",
     "elkjs": "^0.8.2",
     "uniqolor": "^1.1.1"

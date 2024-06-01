@@ -93,9 +93,7 @@ export class GenericNodeRenderer {
 		if (east[0] && east[1] > 0)
 			portColums += 1;
 
-		var middleSpacing = 0;
-		if (portColums == 2)
-			middleSpacing = schematic.NODE_MIDDLE_PORT_SPACING
+		var middleSpacing = schematic.NODE_MIDDLE_PORT_SPACING;
 		var portW = max(west[1], east[1]);
 
 		d.portLabelWidth = portW;
@@ -271,7 +269,7 @@ export class GenericNodeRenderer {
 			});
 
 		node.each(function(d) {
-			var ignorePortLabel = typeof d.children !== "undefined";
+			var ignorePortLabel = typeof d.children !== "undefined" && d.children.length > 0;
 			if (d.ports != null) {
 				d.ports.forEach(function(p) {
 					p.ignoreLabel = ignorePortLabel;
@@ -282,12 +280,6 @@ export class GenericNodeRenderer {
 		// spot port name
 		portG.append("text")
 			.text(function(d, i) {
-                /*var next_d = port_data[i+1];
-                if (next_d && next_d.hwMeta.level > d.hwMeta.level) {
-					console.log(d.hwMeta.name);
-                    //d.hwMeta.name=toString("+");
-                }
-                */
 				if (d.ignoreLabel)
 					return "";
 				else if (d.parent) {
@@ -317,7 +309,7 @@ export class GenericNodeRenderer {
 				}
 				if (side == "WEST") {
 					// Print d.x and d.hwMeta.parent.x to debug
-					console.log(d.x + (this.textContent.length * CHAR_WIDTH) + PORT_WIDTH, d.hwMeta.parent.x);
+					// console.log(d.x + (this.textContent.length * CHAR_WIDTH) + PORT_WIDTH, d.hwMeta.parent.x);
 					return PORT_WIDTH * 2;
 				} else if (side == "EAST") {
 					// if (typeof this.getBBox == "undefined") {
