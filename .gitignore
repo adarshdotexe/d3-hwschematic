@@ -10,5 +10,6 @@ package-lock.json
 .project
 .settings/
 .externalToolBuilders/
-
+examples/sc_hierarchy.hwscheme.json
+examples/sc_hierarchy.hwscheme.json
 /.idea/

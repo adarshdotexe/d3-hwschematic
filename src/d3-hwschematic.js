@@ -29,7 +29,7 @@ function getNameOfEdge(e) {
 }
 
 function getDetailsOfNode(n) {
-    let details = "";
+    let details = "ID: " + n.id + "&#13;&#10;";
     if (n.hwMeta) {
         if (typeof n.hwMeta.name !== "undefined") {
             details += "Name: " + n.hwMeta.name + "&#13;&#10;";
@@ -38,14 +38,11 @@ function getDetailsOfNode(n) {
             details += "Class: " + n.hwMeta.cls + "&#13;&#10;";
         }
     }
-    if (details === "") {
-        details = "unnamed";
-    }
     return details;
 }
 
 function getDetailsOfPort(p) {
-    let details = "";
+    let details = "ID: " + p.id + "&#13;&#10;";
     if (p.hwMeta) {
         if (typeof p.hwMeta.fullname !== "undefined") {
             details += "Name: " + p.hwMeta.fullname + "&#13;&#10;";
@@ -56,9 +53,6 @@ function getDetailsOfPort(p) {
         if (typeof p.hwMeta.sig_name !== "undefined") {
             details += "Signal: " + p.hwMeta.sig_name + "&#13;&#10;";
         }
-    }
-    if (details === "") {
-        details = "unnamed";
     }
     return details;
 }

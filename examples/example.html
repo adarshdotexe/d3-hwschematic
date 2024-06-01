@@ -59,11 +59,11 @@
             e = document.documentElement || document.body;
         }
         
-        const sidebarHeight = document.querySelector('.sidebar').offsetHeight;
+        const sidebarHeight = document.querySelector('.sidebar').offsetWidth;
         
         return {
-            width: e[a + 'Width'] - 2 * margin,
-            height: e[a + 'Height'] - 2 * margin - sidebarHeight
+            width: e[a + 'Width'] - 2 * margin - sidebarHeight,
+            height: e[a + 'Height'] - 2 * margin
         }
     }
 
