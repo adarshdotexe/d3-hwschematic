@@ -21,24 +21,24 @@
                 <input type="text" id="root-path-input" list="root-path-input-paths" />
                 <datalist id="root-path-input-paths"></datalist>
             </label>
-            <label> Search Node: (TODO: implement search)
+            <div id="current-nodes-info" class="tree-nodes-info">
+                <p>Current nodes:</p>
+                <button onclick="getCurrentNodesInfo()">Refresh</button>
+                <ul id="current-nodes-list"></ul>
+            </div>
+            <!-- <label> Search Node: (TODO: implement search)
                 <input type="text" id="search-node-input" />
                 <input type="checkbox" id="search-node-case-sensitive" />
                 <label for="search-node-case-sensitive">Case sensitive</label>
                 <input type="checkbox" id="search-node-regex" />
                 <label for="search-node-regex">Regex</label>
-                <div id="current-nodes-info" class="tree-nodes-info">
-                    <p>Current nodes:</p>
-                    <button onclick="getCurrentNodesInfo(graph)">Refresh</button>
-                    <ul id="current-nodes-list"></ul>
-                </div>
-            </label>
-            <label> Search Edge: (TODO: implement search)
+            </label> -->
+            <!-- <label> Search Edge: (TODO: implement search)
                 <p>Source:</p>
                 <input type="text" id="search-edge-input-source" />
                 <p>Target:</p>
                 <input type="text" id="search-edge-input-target" />
-            </label>
+            </label> -->
 
         </div>
         <div style="flex: 1; padding: 1em;">
@@ -96,11 +96,11 @@
 <script>
     // data loading script
 
-    function getCurrentNodesInfo(graph) {
+    function getCurrentNodesInfo() {
         let currentNodesInfo = document.getElementById("current-nodes-info");
         let currentNodesList = document.getElementById("current-nodes-list");
         currentNodesList.innerHTML = "";
-        let nodes = rootGraph.children[0]
+        let nodes = hwSchematic._nodes[0];
         AddNodesToList(nodes, currentNodesList);
     }
 
@@ -164,7 +164,6 @@
             hwSchematic.setErrorText(e);
             throw e;
         });
-        getCurrentNodesInfo(graph)
     }
 
     function onSchematicRootSubmit() {
@@ -212,14 +211,12 @@
 
     function getAllPaths(node, prefix, allPaths) {
         let children = node.children || node._children;
-        if (children && children.length) {
-            let nodePath = node.hwMeta.name;
-            prefix += nodePath;
-            allPaths.push(prefix);
+        let nodePath = node.hwMeta.name;
+        prefix += nodePath;
+        allPaths.push(prefix);
 
-            for (let child of children) {
-                getAllPaths(child, prefix + "/", allPaths);
-            }
+        for (let child of children) {
+            getAllPaths(child, prefix + "/", allPaths);
         }
     }
 
@@ -244,6 +241,9 @@
     let schematicRoot = getUrlParameterByName("schematicRoot");
     if (schematicRoot !== null) {
         rootInput.setAttribute("value", schematicRoot);
+    }
+    if (schematicName == null) {
+        schematicName = "sc_hierarchy.hwscheme.json";
     }
 
     if (schematicName != null) {
